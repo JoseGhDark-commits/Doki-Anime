@@ -1,4 +1,3 @@
-// browse.js - Exploración con configuración centralizada
 
 // Configuración
 const API_CONFIG = {
