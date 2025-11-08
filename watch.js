@@ -100,11 +100,11 @@ async function loadServers(animeId, epDataId) {
 // Obtener enlace de streaming - CORREGIDO
 async function getStreamUrl(animeId, serverId, epDataId, type = 'sub') {
     try {
+        const streamId = `${animeId}?ep=${epDataId}`;
         const url = new URL(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.STREAM}`);
-        url.searchParams.append('id', animeId);
+        url.searchParams.append('id', streamId);
         url.searchParams.append('server', serverId);
         url.searchParams.append('type', type);
-        url.searchParams.append('ep', epDataId);
 
         const res = await fetch(url);
         const data = await res.json();

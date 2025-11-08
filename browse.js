@@ -263,8 +263,18 @@ function clearFilters() {
 function initFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
     const category = urlParams.get('category');
-    
-    if (category) {
+    const searchQuery = urlParams.get('search');
+
+    if (searchQuery) {
+        document.getElementById('pageTitle').textContent = `Resultados para: "${searchQuery}"`;
+        document.getElementById('pageDescription').textContent = 'Resultados de tu búsqueda';
+        // Ocultar filtros para no confundir
+        const filterContainer = document.querySelector('.filter-container');
+        if (filterContainer) {
+            filterContainer.style.display = 'none';
+        }
+        searchAnime(searchQuery);
+    } else if (category) {
         const pageTitle = document.getElementById('pageTitle');
         const pageDescription = document.getElementById('pageDescription');
         
@@ -294,6 +304,34 @@ function initFromURL() {
                 currentFilters.status = 'top-airing';
                 break;
         }
+        loadAnime(1); // Cargar anime por categoría
+    } else {
+        loadAnime(1); // Carga por defecto si no hay params
+    }
+}
+
+// Nueva función para buscar anime
+async function searchAnime(query) {
+    const grid = document.getElementById('animeGrid');
+    grid.innerHTML = `<div class="loading-container"><div class="loading-spinner"></div><div>Buscando...</div></div>`;
+
+    try {
+        const data = await fetchFromAPI(`/api/search?keyword=${encodeURIComponent(query)}`);
+
+        if (data && data.success && data.results.length > 0) {
+            grid.innerHTML = '';
+            data.results.forEach(anime => {
+                grid.appendChild(createAnimeCard(anime));
+            });
+            document.getElementById('resultsCount').innerHTML = `<strong>📊 ${data.results.length} resultados encontrados</strong>`;
+            // Ocultar paginación en búsqueda simple
+            document.getElementById('pagination').style.display = 'none';
+        } else {
+            grid.innerHTML = `<div class="loading-container"><div>😢</div><div>No se encontraron resultados para "${query}"</div></div>`;
+        }
+    } catch (error) {
+        console.error('Error en búsqueda:', error);
+        grid.innerHTML = `<div class="loading-container"><div>⚠️</div><div>Error al realizar la búsqueda</div></div>`;
     }
 }
 
@@ -325,5 +363,4 @@ if (mobileMenuToggle && navMenu) {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Inicializando página de exploración...');
     initFromURL();
-    loadAnime(1);
 });
