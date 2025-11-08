@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doki Doki Anime - Ver Anime Online Gratis</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="navbar">
+            <div class="container">
+                <div class="nav-wrapper">
+                    <div class="logo">
+                        <h1>🎌 Doki Doki Anime</h1>
+                    </div>
+                    <ul class="nav-menu">
+                        <li><a href="index.html" class="active">Home</a></li>
+                        <li><a href="browse.html?category=movie">Movies</a></li>
+                        <li><a href="browse.html?category=tv">TV Series</a></li>
+                        <li><a href="browse.html?category=most-popular">Most Popular</a></li>
+                        <li><a href="browse.html?category=top-airing">Top Airing</a></li>
+                    </ul>
+                    <button class="btn-primary" onclick="window.location.href='browse.html?category=most-popular'">Ver Anime</button>
+                    <button class="mobile-menu-toggle">☰</button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h2>Descubre tu próximo anime favorito</h2>
+                <p>Miles de series y películas disponibles para ver gratis</p>
+                <div class="search-bar">
+                    <input type="text" id="searchInput" placeholder="Buscar anime, películas, series...">
+                    <button class="search-btn">🔍</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Top Searches -->
+    <section class="top-searches">
+        <div class="container">
+            <h3>🔥 Top Búsquedas</h3>
+            <div class="anime-grid" id="topSearches">
+                <!-- Content loaded by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Most Popular -->
+    <section class="section" id="popular">
+        <div class="container">
+            <h3>⭐ Más Populares</h3>
+            <div class="anime-grid" id="popularAnime">
+                <!-- Content loaded by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Top Airing -->
+    <section class="section" id="airing">
+        <div class="container">
+            <h3>📺 En Emisión</h3>
+            <div class="anime-grid" id="airingAnime">
+                <!-- Content loaded by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Movies -->
+    <section class="section" id="movies">
+        <div class="container">
+            <h3>🎬 Películas</h3>
+            <div class="anime-grid" id="moviesAnime">
+                <!-- Content loaded by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Doki Doki Anime</h4>
+                    <p>Tu plataforma favorita para ver anime online</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Enlaces</h4>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="browse.html?category=movie">Películas</a></li>
+                        <li><a href="browse.html?category=tv">Series</a></li>
+                        <li><a href="browse.html?category=most-popular">Populares</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="dmca.html">Aviso Legal</a></li>
+                        <li><a href="#privacy">Privacidad</a></li>
+                        <li><a href="dmca.html">DMCA</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="disclaimer">
+                <p><strong>Descargo de Responsabilidad:</strong> Este sitio no almacena ningún archivo en sus servidores. Todo el contenido es proporcionado por servicios de terceros no afiliados. Este sitio solo indexa y enlaza contenido disponible públicamente en internet.</p>
+            </div>
+            <div class="copyright">
+                <p>© 2025 - All rights reserved Doki Doki Anime</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
