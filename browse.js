@@ -1,4 +1,4 @@
-
+import { API_CONFIG } from './api-config.js';
 
 // Estado actual
 let currentPage = 1;
