@@ -1,6 +1,6 @@
 // api-config.js - Configuración centralizada de la API
-const API_CONFIG = {
-    BASE_URL: 'https://anime-iota-nine.vercel.app',
+export const API_CONFIG = {
+BASE_URL: 'https://anime-iota-nine.vercel.app',
     ENDPOINTS: {
         HOME: '/api/',
         SEARCH: '/api/search',
