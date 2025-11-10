@@ -1,13 +1,4 @@
-import { API_CONFIG } from './api-config.js';
 
-// Estado actual
-let currentPage = 1;
-let currentFilters = {
-    genre: '',
-    type: '',
-    status: '',
-    sort: 'most-popular'
-};
 
 // Función para hacer peticiones a la API
 async function fetchFromAPI(endpoint) {
