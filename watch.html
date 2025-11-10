@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ver Anime - Doki Doki Anime</title>
     
-    <!-- ESTILOS OBLIGATORIOS -->
+    <!-- ESTILOS CORRECTOS -->
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,6 +21,7 @@
                         <h1><a href="index.html" style="text-decoration: none; color: inherit;">🎌 Doki Doki Anime</a></h1>
                     </div>
                     <button id="back-btn" class="back-btn">← Volver</button>
+                    <button class="mobile-menu-toggle" style="display: none;">☰</button>
                 </div>
             </div>
         </nav>
@@ -29,7 +30,7 @@
     <!-- Loading -->
     <div id="loading" class="loading-state">
         <div class="spinner"></div>
-        <div>Cargando...</div>
+        <div>Cargando contenido...</div>
     </div>
 
     <!-- Contenedor Principal -->
@@ -43,21 +44,21 @@
                 <span id="anime-rating"></span>
             </div>
 
-            <!-- Reproductor con contenedor para subtítulos -->
-            <div class="video-container">
+            <!-- CONTENEDOR DEL REPRODUCTOR -->
+            <div class="video-container" style="position: relative;">
                 <video id="video-player" class="video-player" controls autoplay playsinline>
-                    <!-- Origen del video se carga dinámicamente -->
+                    <!-- Video source se carga dinámicamente -->
                     <track id="subtitle-track" kind="subtitles" label="Subtítulos" srclang="es" default>
                     Tu navegador no soporta este video.
                 </video>
                 
-                <!-- Controles personalizados -->
-                <div class="video-controls">
-                    <button id="subtitle-toggle" class="control-btn" style="display: none;" title="Subtítulos">
-                        <span style="font-weight: bold;">CC</span>
+                <!-- CONTROLES DE SUBTÍTULOS -->
+                <div class="video-controls" style="position: absolute; bottom: 60px; right: 20px; z-index: 100;">
+                    <button id="subtitle-toggle" class="control-btn" style="display: none;" title="Subtítulos (CC)">
+                        <span style="font-weight: bold; font-size: 0.8rem;">CC</span>
                     </button>
                     <select id="subtitle-selector" class="control-select" style="display: none;">
-                        <option value="">🚫 Desactivar</option>
+                        <option value="">🚫 Desactivar subtítulos</option>
                     </select>
                 </div>
             </div>
@@ -73,8 +74,8 @@
         <div class="content-grid">
             <div class="anime-info">
                 <h2>ℹ️ Información</h2>
-                <img id="anime-image" class="anime-poster" src="" alt="Anime" style="display: none;">
-                <p id="anime-description">Cargando información del anime...</p>
+                <img id="anime-image" class="anime-poster" src="" alt="Anime" style="display: none; max-width: 200px; border-radius: 8px; margin: 1rem 0;">
+                <p id="anime-description" style="color: var(--text-secondary); line-height: 1.8;">Cargando información del anime...</p>
             </div>
 
             <aside class="sidebar">
