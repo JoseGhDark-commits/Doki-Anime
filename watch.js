@@ -1,18 +1,17 @@
-// watch.js - COMPLETO Y CORREGIDO
+// watch.js - VERSIÓN FINAL USANDO episode.id
 import { API_CONFIG } from './api-config.js';
 
 let currentAnimeId = null;
-let currentEpisodeDataId = null;
+let currentEpisodeId = null; // CAMBIO CLAVE: usa id en lugar de data_id
 let episodeList = [];
 let animeInfo = null;
 
-// Normalizar episodios (por si data_id no existe)
+// Normalizar episodios usando ID
 function normalizeEpisodeData(episode) {
     return {
-        data_id: episode.data_id || episode.id || '',
+        id: episode.id || '', // ID principal
         episode_no: episode.episode_no || episode.number || 1,
-        title: episode.title || episode.name || '',
-        id: episode.id || ''
+        title: episode.title || episode.name || ''
     };
 }
 
@@ -68,11 +67,9 @@ async function loadEpisodes(animeId) {
         const data = await res.json();
         
         if (!data?.success || !Array.isArray(data.results?.episodes)) {
-            console.warn('No hay episodios disponibles o formato incorrecto');
             return [];
         }
         
-        // Normalizar episodios
         return data.results.episodes.map(ep => normalizeEpisodeData(ep));
     } catch (err) {
         console.error('Error al cargar episodios:', err);
@@ -83,15 +80,15 @@ async function loadEpisodes(animeId) {
     }
 }
 
-// Cargar servidores
-async function loadServers(animeId, epDataId) {
+// Cargar servidores (usa episode.id)
+async function loadServers(animeId, episodeId) {
     try {
-        if (!epDataId) {
-            throw new Error('epDataId es undefined');
+        if (!episodeId) {
+            throw new Error('episodeId es undefined');
         }
         
-        const url = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SERVERS}/${encodeURIComponent(animeId)}?ep=${epDataId}`;
-        console.log('Cargando servidores:', url);
+        const url = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SERVERS}/${encodeURIComponent(animeId)}?ep=${episodeId}`;
+        console.log('✅ Cargando servidores:', url);
         
         const res = await fetch(url);
         const data = await res.json();
@@ -108,15 +105,14 @@ async function loadServers(animeId, epDataId) {
 }
 
 // Obtener enlace de streaming
-async function getStreamUrl(animeId, serverId, epDataId, type = 'sub') {
+async function getStreamUrl(animeId, serverId, episodeId, type = 'sub') {
     try {
         const url = new URL(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.STREAM}`);
         url.searchParams.append('id', animeId);
         url.searchParams.append('server', serverId);
         url.searchParams.append('type', type);
-        url.searchParams.append('ep', epDataId);
+        url.searchParams.append('ep', episodeId);
 
-        console.log('Obteniendo stream:', url.toString());
         const res = await fetch(url);
         const data = await res.json();
 
@@ -148,15 +144,15 @@ function renderAnimeInfo(info) {
     document.getElementById('anime-rating').textContent = `⭐ ${rating}`;
 }
 
-// Renderizar lista de episodios
-function renderEpisodeList(episodes, activeEpDataId = null) {
+// Renderizar lista de episodios (usa episode.id)
+function renderEpisodeList(episodes, activeEpisodeId = null) {
     const container = document.querySelector('.episode-grid');
     container.innerHTML = '';
 
     episodes.forEach(ep => {
         const button = document.createElement('div');
         button.className = 'episode-item';
-        if (ep.data_id === activeEpDataId) button.classList.add('active');
+        if (ep.id === activeEpisodeId) button.classList.add('active');
         button.textContent = ep.episode_no || '?';
         button.onclick = () => loadEpisode(ep);
         container.appendChild(button);
@@ -164,7 +160,7 @@ function renderEpisodeList(episodes, activeEpDataId = null) {
 }
 
 // Renderizar selectores de servidor
-function renderServers(servers, animeId, epDataId) {
+function renderServers(servers, animeId, episodeId) {
     const container = document.getElementById('server-selector');
     
     if (servers.length === 0) {
@@ -172,7 +168,6 @@ function renderServers(servers, animeId, epDataId) {
         return;
     }
 
-    // Agrupar por tipo
     const subServers = servers.filter(s => s.type === 'sub');
     const dubServers = servers.filter(s => s.type === 'dub');
 
@@ -181,10 +176,7 @@ function renderServers(servers, animeId, epDataId) {
     if (subServers.length > 0) {
         html += '<div class="server-section"><h4>Subtitulado</h4>';
         subServers.forEach(s => {
-            html += `
-                <button class="server-button" data-server="${s.server_id}" data-type="sub">
-                    ${s.serverName || `Servidor ${s.server_id}`}
-                </button>`;
+            html += `<button class="server-button" data-server="${s.server_id}" data-type="sub">${s.serverName || `Servidor ${s.server_id}`}</button>`;
         });
         html += '</div>';
     }
@@ -192,24 +184,20 @@ function renderServers(servers, animeId, epDataId) {
     if (dubServers.length > 0) {
         html += '<div class="server-section"><h4>Doblado</h4>';
         dubServers.forEach(s => {
-            html += `
-                <button class="server-button" data-server="${s.server_id}" data-type="dub">
-                    ${s.serverName || `Servidor ${s.server_id}`}
-                </button>`;
+            html += `<button class="server-button" data-server="${s.server_id}" data-type="dub">${s.serverName || `Servidor ${s.server_id}`}</button>`;
         });
         html += '</div>';
     }
 
     container.innerHTML = html;
 
-    // Eventos
     container.querySelectorAll('.server-button').forEach(btn => {
         btn.onclick = async () => {
             const serverId = btn.dataset.server;
             const type = btn.dataset.type;
             
             showLoading(true);
-            const url = await getStreamUrl(currentAnimeId, serverId, currentEpisodeDataId, type);
+            const url = await getStreamUrl(currentAnimeId, serverId, currentEpisodeId, type);
             showLoading(false);
             
             if (url) {
@@ -224,28 +212,25 @@ function renderServers(servers, animeId, epDataId) {
     });
 }
 
-// Cargar un episodio
+// Cargar un episodio (usa episode.id)
 async function loadEpisode(episode) {
-    currentEpisodeDataId = episode.data_id;
+    currentEpisodeId = episode.id; // CAMBIO CLAVE
     
-    console.log('Cargando episodio:', episode);
-    console.log('data_id guardado:', currentEpisodeDataId);
+    console.log('✅ Cargando episodio:', episode);
+    console.log('✅ episode.id guardado:', currentEpisodeId);
 
     document.getElementById('episode-title').textContent = 
         `Episodio ${episode.episode_no}${episode.title ? `: ${episode.title}` : ''}`;
 
-    // Actualizar UI
-    renderEpisodeList(episodeList, episode.data_id);
+    renderEpisodeList(episodeList, episode.id); // CAMBIO
 
-    // Cargar servidores
     showLoading(true);
-    const servers = await loadServers(currentAnimeId, episode.data_id);
-    renderServers(servers, currentAnimeId, episode.data_id);
+    const servers = await loadServers(currentAnimeId, episode.id); // CAMBIO
+    renderServers(servers, currentAnimeId, episode.id); // CAMBIO
     
-    // Auto-cargar primer servidor
     if (servers.length > 0) {
         const first = servers[0];
-        const url = await getStreamUrl(currentAnimeId, first.server_id, episode.data_id, first.type || 'sub');
+        const url = await getStreamUrl(currentAnimeId, first.server_id, episode.id, first.type || 'sub'); // CAMBIO
         if (url) {
             document.getElementById('video-player').innerHTML = `
                 <video class="video-player" controls autoplay playsinline>
@@ -256,11 +241,6 @@ async function loadEpisode(episode) {
         }
     }
     showLoading(false);
-
-    // Actualizar URL
-    const newUrl = new URL(window.location);
-    newUrl.searchParams.set('ep', episode.episode_no);
-    window.history.replaceState(null, '', newUrl);
 }
 
 // Inicialización
@@ -284,11 +264,7 @@ async function init() {
 
     episodeList = await loadEpisodes(animeId);
     
-    // DEBUG
-    console.log('=== DEPURACIÓN ===');
-    console.log('EpisodeList:', episodeList);
-    console.log('Primer episodio:', episodeList[0]);
-    console.log('data_id:', episodeList[0]?.data_id);
+    console.log('🎬 EPISODIOS CARGADOS:', episodeList);
 
     if (!episodeList || episodeList.length === 0) {
         showLoading(false);
@@ -308,20 +284,19 @@ async function init() {
 
     showLoading(false);
 
-    // Navegación
     const prevBtn = document.getElementById('prev-episode');
     const nextBtn = document.getElementById('next-episode');
 
     if (prevBtn) {
         prevBtn.onclick = () => {
-            const idx = episodeList.findIndex(ep => ep.data_id === currentEpisodeDataId);
+            const idx = episodeList.findIndex(ep => ep.id === currentEpisodeId); // CAMBIO
             if (idx > 0) loadEpisode(episodeList[idx - 1]);
         };
     }
 
     if (nextBtn) {
         nextBtn.onclick = () => {
-            const idx = episodeList.findIndex(ep => ep.data_id === currentEpisodeDataId);
+            const idx = episodeList.findIndex(ep => ep.id === currentEpisodeId); // CAMBIO
             if (idx < episodeList.length - 1) loadEpisode(episodeList[idx + 1]);
         };
     }
