@@ -68,16 +68,12 @@ async function fetchFromAPI(endpoint) {
         }
         
         const data = await response.json();
+        console.log('📦 Respuesta completa:', data);
         
-        if (!data) {
-            throw new Error('Respuesta vacía de la API');
-        }
-        
-        console.log('✅ Respuesta API:', data);
         return data;
     } catch (error) {
         console.error(`❌ Error fetching ${endpoint}:`, error);
-        return null;
+        return { success: false, error: error.message };
     }
 }
 
