@@ -157,13 +157,19 @@ async function loadAnime(page = 1) {
         } else if (filters.type && !filters.sort) {
             endpoint = `/api/${filters.type}?page=${page}`;
         } else {
+            // ===== VALIDACIÓN DEFENSIVA =====
+            const categories = window.API_CONFIG?.ENDPOINTS?.CATEGORIES;
+            if (!categories) {
+                throw new Error('Categorías no definidas en API_CONFIG');
+            }
+            
             switch(filters.sort) {
-                case 'most-popular': endpoint = `${window.API_CONFIG.ENDPOINTS.CATEGORIES.POPULAR}?page=${page}`; break;
-                case 'recently-added': endpoint = `${window.API_CONFIG.ENDPOINTS.CATEGORIES.RECENT}?page=${page}`; break;
-                case 'recently-updated': endpoint = `${window.API_CONFIG.ENDPOINTS.CATEGORIES.UPDATED}?page=${page}`; break;
-                case 'top-airing': endpoint = `${window.API_CONFIG.ENDPOINTS.CATEGORIES.AIRING}?page=${page}`; break;
-                case 'most-favorite': endpoint = `${window.API_CONFIG.ENDPOINTS.CATEGORIES.FAVORITE}?page=${page}`; break;
-                default: endpoint = `${window.API_CONFIG.ENDPOINTS.CATEGORIES.POPULAR}?page=${page}`;
+                case 'most-popular': endpoint = `${categories.POPULAR}?page=${page}`; break;
+                case 'recently-added': endpoint = `${categories.RECENT}?page=${page}`; break;
+                case 'recently-updated': endpoint = `${categories.UPDATED}?page=${page}`; break;
+                case 'top-airing': endpoint = `${categories.AIRING}?page=${page}`; break;
+                case 'most-favorite': endpoint = `${categories.FAVORITE}?page=${page}`; break;
+                default: endpoint = `${categories.POPULAR}?page=${page}`;
             }
         }
         
@@ -209,7 +215,7 @@ async function loadAnime(page = 1) {
             totalPages = 1;
         }
         
-        console.log('✅ animeList final (array):', animeList);
+        console.log('✅ animeList procesado (array):', animeList);
         console.log('📊 Total páginas:', totalPages);
         
         grid.innerHTML = '';
