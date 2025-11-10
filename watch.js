@@ -276,6 +276,40 @@ async function init() {
     currentAnimeId = animeId;
     showLoading(true);
 
+    animeInfo = await loadAnimeInfo(animeId);
+    if (!animeInfo) {
+        showLoading(false);
+        return;
+    }
+
+    episodeList = await loadEpisodes(animeId);
+    
+    // **DEBUG CRÍTICO**
+    console.log('=== DEPURACIÓN EPISODIOS ===');
+    console.log('episodeList:', episodeList);
+    console.log('Primer episodio:', episodeList[0]);
+    console.log('Tiene data_id?', episodeList[0]?.data_id);
+    console.log('Tiene id?', episodeList[0]?.id);
+
+    if (!episodeList || episodeList.length === 0) {
+        showLoading(false);
+        showError('Este anime no tiene episodios disponibles.');
+        return;
+    }
+
+    renderAnimeInfo(animeInfo);
+    renderEpisodeList(episodeList);
+
+    const epNo = parseInt(urlParams.get('ep')) || episodeList[0].episode_no;
+    const targetEp = episodeList.find(ep => ep.episode_no === epNo) || episodeList[0];
+    
+    if (targetEp) {
+        await loadEpisode(targetEp);
+    }
+
+    showLoading(false);
+}
+
     // Cargar información del anime
     animeInfo = await loadAnimeInfo(animeId);
     if (!animeInfo) {
