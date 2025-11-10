@@ -1,15 +1,4 @@
-// watch.js - Versión corregida y optimizada
-
-// Configuración centralizada
-const API_CONFIG = {
-    BASE_URL: 'https://anime-iota-nine.vercel.app',
-    ENDPOINTS: {
-        INFO: '/api/info',
-        EPISODES: '/api/episodes',
-        SERVERS: '/api/servers',
-        STREAM: '/api/stream'
-    }
-};
+import { API_CONFIG } from './api-config.js';
 
 let currentAnimeId = null;
 let currentEpisodeDataId = null;
