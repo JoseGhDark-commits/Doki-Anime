@@ -1,6 +1,6 @@
 // api-config.js - Configuración centralizada de la API
 export const API_CONFIG = {
-BASE_URL: 'https://anime-iota-nine.vercel.app',
+    BASE_URL: 'https://anime-iota-nine.vercel.app',
     ENDPOINTS: {
         HOME: '/api/',
         SEARCH: '/api/search',
@@ -9,14 +9,36 @@ BASE_URL: 'https://anime-iota-nine.vercel.app',
         EPISODES: '/api/episodes',
         SERVERS: '/api/servers',
         STREAM: '/api/stream',
-        GENRE: '/api/genre',
+        STREAM_FB: '/api/stream/fallback',
+        FILTER: '/api/filter',
+        SCHEDULE: '/api/schedule',
+        CHARACTER_LIST: '/api/character/list',
+        CHARACTER: '/api/character',
+        ACTOR: '/api/actors',
+        TOP_TEN: '/api/top-ten',
+        TOP_SEARCH: '/api/top-search',
+        
+        // Categorías con soporte para paginación
         CATEGORIES: {
             POPULAR: '/api/most-popular',
             AIRING: '/api/top-airing',
             MOVIES: '/api/movie',
             RECENT: '/api/recently-added',
+            UPDATED: '/api/recently-updated',
             FAVORITE: '/api/most-favorite',
-            UPDATED: '/api/recently-updated'
-        }
+            COMPLETED: '/api/completed',
+            SUBBED: '/api/subbed-anime',
+            DUBBED: '/api/dubbed-anime',
+            UPCOMING: '/api/top-upcoming'
+        },
+        
+        // Géneros
+        GENRE: (genre, page = 1) => `/api/genre/${genre}?page=${page}`,
+        
+        // Productores/Estudios
+        PRODUCER: (producer, page = 1) => `/api/producer/${producer}?page=${page}`,
+        
+        // A-Z List
+        AZ_LIST: (letter = 'a', page = 1) => `/api/az-list/${letter}?page=${page}`
     }
 };
