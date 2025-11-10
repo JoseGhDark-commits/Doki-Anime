@@ -148,11 +148,12 @@ async function loadAnime(page = 1) {
         // Determinar endpoint
         if (isSearch) {
             endpoint = `${window.API_CONFIG.ENDPOINTS.SEARCH}?keyword=${encodeURIComponent(filters.search)}`;
-        } else if (filters.genre) {
-            endpoint = `/api/genre/${filters.genre}?page=${page}`;
-        } else if (filters.type && !filters.sort) {
-            endpoint = `/api/${filters.type}?page=${page}`;
-        } else {
+       // En la función loadAnime, corregir:
+       } else if (filters.genre) {
+            endpoint = `${window.API_CONFIG.BASE_URL}/api/genre/${filters.genre}?page=${page}`;
+       } else if (filters.type && !filters.sort) {
+         endpoint = `${window.API_CONFIG.BASE_URL}/api/${filters.type}?page=${page}`;
+       } else {
             // ===== VALIDACIÓN DEFENSIVA =====
             const categories = window.API_CONFIG?.ENDPOINTS?.CATEGORIES;
             if (!categories) {
