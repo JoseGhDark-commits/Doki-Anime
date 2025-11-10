@@ -1,6 +1,6 @@
 // api-config.js - VERSIÓN 100% ESTÁTICA (sin export)
 window.API_CONFIG = {
-    BASE_URL: 'https://anime-iota-nine.vercel.app ',
+    BASE_URL: 'https://anime-iota-nine.vercel.app',
     ENDPOINTS: {
         HOME: '/api/',
         SEARCH: '/api/search',
