@@ -1,5 +1,15 @@
 import { API_CONFIG } from './api-config.js';
 
+// Estado actual
+let currentFilters = {
+    genre: '',
+    type: '',
+    status: '',
+    sort: 'most-popular',
+    search: ''
+};
+let currentPage = 1;
+
 // Función para hacer peticiones a la API
 async function fetchFromAPI(endpoint) {
     try {
@@ -14,6 +24,7 @@ async function fetchFromAPI(endpoint) {
         return null;
     }
 }
+
 // Normalizar datos de anime
 function normalizeAnimeData(anime) {
     if (!anime) return null;
@@ -63,7 +74,7 @@ function createAnimeCard(anime) {
     return card;
 }
 
-// Cargar anime según filtros
+// Cargar anime con soporte para búsqueda, categoría y filtros
 async function loadAnime(page = 1) {
     const grid = document.getElementById('animeGrid');
     const resultsCount = document.getElementById('resultsCount');
@@ -81,39 +92,75 @@ async function loadAnime(page = 1) {
         let endpoint = '';
         const filters = currentFilters;
         
-        // Construir endpoint según filtros
-        if (filters.genre) {
+        // PRIORIDAD: Búsqueda primero
+        if (filters.search) {
+            endpoint = `${API_CONFIG.ENDPOINTS.SEARCH}?keyword=${encodeURIComponent(filters.search)}`;
+        }
+        // Segunda prioridad: Género
+        else if (filters.genre) {
             endpoint = `/api/genre/${filters.genre}?page=${page}`;
-        } else if (filters.status === 'top-airing') {
-            endpoint = `/api/top-airing?page=${page}`;
-        } else if (filters.sort === 'recently-added') {
-            endpoint = `/api/recently-added?page=${page}`;
-        } else if (filters.sort === 'recently-updated') {
-            endpoint = `/api/recently-updated?page=${page}`;
-        } else if (filters.sort === 'most-favorite') {
-            endpoint = `/api/most-favorite?page=${page}`;
-        } else if (filters.type === 'movie') {
-            endpoint = `/api/movie?page=${page}`;
-        } else {
-            endpoint = `/api/most-popular?page=${page}`;
+        }
+        // Tercera prioridad: Tipo (movie, tv)
+        else if (filters.type && !filters.status) {
+            endpoint = `/api/${filters.type}?page=${page}`;
+        }
+        // Cuarta prioridad: Estado/sort
+        else {
+            switch(filters.sort) {
+                case 'most-popular':
+                    endpoint = `${API_CONFIG.ENDPOINTS.CATEGORIES.POPULAR}?page=${page}`;
+                    break;
+                case 'recently-added':
+                    endpoint = `${API_CONFIG.ENDPOINTS.CATEGORIES.RECENT}?page=${page}`;
+                    break;
+                case 'recently-updated':
+                    endpoint = `${API_CONFIG.ENDPOINTS.CATEGORIES.UPDATED}?page=${page}`;
+                    break;
+                case 'top-airing':
+                    endpoint = `${API_CONFIG.ENDPOINTS.CATEGORIES.AIRING}?page=${page}`;
+                    break;
+                case 'most-favorite':
+                    endpoint = `${API_CONFIG.ENDPOINTS.CATEGORIES.FAVORITE}?page=${page}`;
+                    break;
+                case 'completed':
+                    endpoint = `${API_CONFIG.ENDPOINTS.CATEGORIES.COMPLETED}?page=${page}`;
+                    break;
+                default:
+                    endpoint = `${API_CONFIG.ENDPOINTS.CATEGORIES.POPULAR}?page=${page}`;
+            }
         }
         
+        console.log('Fetching:', endpoint);
         const data = await fetchFromAPI(endpoint);
         
         if (data && data.success) {
-            const animeList = data.results.data || data.results || [];
-            const totalPages = data.results.totalPages || 10;
+            // Manejar diferentes estructuras de respuesta
+            let animeList = [];
+            let totalPages = 1;
+            
+            if (filters.search) {
+                // Búsqueda devuelve array directo
+                animeList = data.results || [];
+                totalPages = 1; // Búsqueda no tiene paginación
+            } else {
+                // Categorías devuelven objeto con data y totalPages
+                animeList = data.results.data || data.results || [];
+                totalPages = data.results.totalPages || 10;
+            }
             
             // Limpiar grid
             grid.innerHTML = '';
             
             if (animeList.length === 0) {
                 grid.innerHTML = `
-                    <div class="loading-container">
+                    <div class="loading-container" style="grid-column: 1/-1;">
                         <div style="font-size: 3rem; margin-bottom: 1rem;">😢</div>
-                        <div>No se encontraron resultados</div>
+                        <div>No se encontraron resultados${filters.search ? ` para "${filters.search}"` : ''}</div>
                     </div>
                 `;
+                resultsCount.innerHTML = `<strong>📊 0 resultados</strong>`;
+                currentPageEl.innerHTML = `<strong>📄 Página 1</strong>`;
+                document.getElementById('pagination').innerHTML = '';
                 return;
             }
             
@@ -126,8 +173,12 @@ async function loadAnime(page = 1) {
             resultsCount.innerHTML = `<strong>📊 ${animeList.length} resultados encontrados</strong>`;
             currentPageEl.innerHTML = `<strong>📄 Página ${page} de ${totalPages}</strong>`;
             
-            // Crear paginación
-            createPagination(page, totalPages);
+            // Crear paginación solo si no es búsqueda
+            if (!filters.search) {
+                createPagination(page, totalPages);
+            } else {
+                document.getElementById('pagination').innerHTML = '';
+            }
             
         } else {
             throw new Error('No se pudieron cargar los datos');
@@ -136,7 +187,7 @@ async function loadAnime(page = 1) {
     } catch (error) {
         console.error('Error loading anime:', error);
         grid.innerHTML = `
-            <div class="loading-container">
+            <div class="loading-container" style="grid-column: 1/-1;">
                 <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
                 <div>Error al cargar el contenido</div>
                 <button onclick="loadAnime(${page})" style="margin-top: 1rem; padding: 0.5rem 1rem; background: var(--primary-color); border: none; border-radius: 8px; color: white; cursor: pointer;">
@@ -191,7 +242,7 @@ function createPagination(currentPage, totalPages) {
     nextBtn.onclick = () => {
         if (currentPage < totalPages) {
             loadAnime(currentPage + 1);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo({ top: 0, behavior: 'smooth' );
         }
     };
     pagination.appendChild(nextBtn);
@@ -203,7 +254,8 @@ function applyFilters() {
         genre: document.getElementById('genreFilter').value,
         type: document.getElementById('typeFilter').value,
         status: document.getElementById('statusFilter').value,
-        sort: document.getElementById('sortFilter').value
+        sort: document.getElementById('sortFilter').value,
+        search: '' // Limpiar búsqueda al aplicar filtros
     };
     
     currentPage = 1;
@@ -221,7 +273,8 @@ function clearFilters() {
         genre: '',
         type: '',
         status: '',
-        sort: 'most-popular'
+        sort: 'most-popular',
+        search: ''
     };
     
     currentPage = 1;
@@ -232,33 +285,46 @@ function clearFilters() {
 function initFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
     const category = urlParams.get('category');
+    const search = urlParams.get('search');
     
-    if (category) {
-        const pageTitle = document.getElementById('pageTitle');
-        const pageDescription = document.getElementById('pageDescription');
+    // TITULOS Y DESCRIPCIONES
+    const titles = {
+        'movie': { title: 'Películas de Anime', desc: 'Descubre las mejores películas de anime' },
+        'tv': { title: 'Series de Anime', desc: 'Explora series de anime completas' },
+        'most-popular': { title: 'Anime Más Populares', desc: 'Los animes más vistos y populares' },
+        'top-airing': { title: 'Top En Emisión', desc: 'Los mejores animes actualmente en emisión' },
+        'search': { title: 'Resultados de Búsqueda', desc: `Resultados para "${search}"` }
+    };
+    
+    // Manejar búsqueda primero
+    if (search) {
+        currentFilters.search = search;
+        document.getElementById('pageTitle').textContent = titles.search?.title || 'Búsqueda';
+        document.getElementById('pageDescription').textContent = titles.search?.desc || `Resultados para "${search}"`;
+        // Ocultar filtros en búsqueda
+        document.querySelector('.filters-section').style.display = 'none';
+        return;
+    }
+    
+    // Manejar categorías
+    if (category && titles[category]) {
+        document.getElementById('pageTitle').textContent = titles[category].title;
+        document.getElementById('pageDescription').textContent = titles[category].desc;
         
         switch(category) {
             case 'movie':
-                pageTitle.textContent = 'Películas de Anime';
-                pageDescription.textContent = 'Descubre las mejores películas de anime';
                 document.getElementById('typeFilter').value = 'movie';
                 currentFilters.type = 'movie';
                 break;
             case 'tv':
-                pageTitle.textContent = 'Series de Anime';
-                pageDescription.textContent = 'Explora series de anime completas';
                 document.getElementById('typeFilter').value = 'tv';
                 currentFilters.type = 'tv';
                 break;
             case 'most-popular':
-                pageTitle.textContent = 'Anime Más Populares';
-                pageDescription.textContent = 'Los animes más vistos y populares';
                 document.getElementById('sortFilter').value = 'most-popular';
                 currentFilters.sort = 'most-popular';
                 break;
             case 'top-airing':
-                pageTitle.textContent = 'Top En Emisión';
-                pageDescription.textContent = 'Los mejores animes actualmente en emisión';
                 document.getElementById('statusFilter').value = 'top-airing';
                 currentFilters.status = 'top-airing';
                 break;
