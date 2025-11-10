@@ -4,48 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ver Anime - Doki Doki Anime</title>
-   <style>
-    /* Estilos base mínimos para watch.html */
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
-        color: #fff;
-        line-height: 1.6;
-        min-height: 100vh;
-    }
-</style>
+    
+    <!-- ESTILOS OBLIGATORIOS -->
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Header -->
+    <!-- Header con clases correctas -->
     <header class="header">
-        <div class="header-content">
-            <a href="index.html" class="logo">
-                🎌 Doki Doki Anime
-            </a>
-            <button id="back-btn" class="back-btn">
-                ← Volver
-            </button>
-        </div>
+        <nav class="navbar">
+            <div class="container">
+                <div class="nav-wrapper">
+                    <div class="logo">
+                        <h1><a href="index.html" style="text-decoration: none; color: inherit;">🎌 Doki Doki Anime</a></h1>
+                    </div>
+                    <button id="back-btn" class="back-btn">← Volver</button>
+                </div>
+            </div>
+        </nav>
     </header>
 
-    <!-- Loading Screen -->
-    <div id="loading">
+    <!-- Loading -->
+    <div id="loading" class="loading-state">
         <div class="spinner"></div>
         <div>Cargando...</div>
     </div>
 
-    <!-- Main Container -->
+    <!-- Contenedor Principal -->
     <div class="container">
-        <!-- Error Message -->
         <div id="error-message"></div>
-
-        <!-- Video Section -->
+        
         <section class="video-section">
             <div class="video-header">
                 <h1 id="anime-title">Cargando...</h1>
@@ -53,52 +43,50 @@
                 <span id="anime-rating"></span>
             </div>
 
-            <!-- Video Player -->
-            <div id="video-player">
-                <div style="color: #fff;">Cargando reproductor...</div>
+            <!-- Reproductor con contenedor para subtítulos -->
+            <div class="video-container">
+                <video id="video-player" class="video-player" controls autoplay playsinline>
+                    <!-- Origen del video se carga dinámicamente -->
+                    <track id="subtitle-track" kind="subtitles" label="Subtítulos" srclang="es" default>
+                    Tu navegador no soporta este video.
+                </video>
+                
+                <!-- Controles personalizados -->
+                <div class="video-controls">
+                    <button id="subtitle-toggle" class="control-btn" style="display: none;" title="Subtítulos">
+                        <span style="font-weight: bold;">CC</span>
+                    </button>
+                    <select id="subtitle-selector" class="control-select" style="display: none;">
+                        <option value="">🚫 Desactivar</option>
+                    </select>
+                </div>
             </div>
 
-            <!-- Episode Navigation -->
+            <!-- Navegación -->
             <div class="episode-navigation">
-                <button id="prev-episode" class="nav-btn">
-                    ← Episodio Anterior
-                </button>
-                <button id="next-episode" class="nav-btn">
-                    Episodio Siguiente →
-                </button>
+                <button id="prev-episode" class="nav-btn" disabled>← Anterior</button>
+                <button id="next-episode" class="nav-btn" disabled>Siguiente →</button>
             </div>
         </section>
 
-        <!-- Content Grid -->
+        <!-- Grid de contenido -->
         <div class="content-grid">
-            <!-- Anime Info -->
             <div class="anime-info">
-                <h2>Información</h2>
+                <h2>ℹ️ Información</h2>
                 <img id="anime-image" class="anime-poster" src="" alt="Anime" style="display: none;">
                 <p id="anime-description">Cargando información del anime...</p>
             </div>
 
-            <!-- Sidebar -->
             <aside class="sidebar">
-                <!-- Server Selector -->
-                <div id="server-selector">
-                    <!-- Los servidores se cargarán aquí -->
-                </div>
-
-                <!-- Episode List -->
-                <div id="episode-list">
-                    <h3>Episodios</h3>
-                    <div class="episode-grid">
-                        <!-- Los episodios se cargarán aquí -->
-                    </div>
-                </div>
+                <div id="server-selector"></div>
+                <div id="episode-list"></div>
             </aside>
         </div>
     </div>
 
-    <!-- Watch.js Script -->
-<script src="api-config.js"></script>
-<script src="api-adapter.js"></script>
-<script src="watch.js"></script>
+    <!-- Scripts -->
+    <script src="api-config.js"></script>
+    <script src="api-adapter.js"></script>
+    <script src="watch.js"></script>
 </body>
 </html>
