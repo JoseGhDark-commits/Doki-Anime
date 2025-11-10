@@ -1,9 +1,20 @@
+// watch.js - COMPLETO Y CORREGIDO
 import { API_CONFIG } from './api-config.js';
 
 let currentAnimeId = null;
 let currentEpisodeDataId = null;
 let episodeList = [];
 let animeInfo = null;
+
+// Normalizar episodios (por si data_id no existe)
+function normalizeEpisodeData(episode) {
+    return {
+        data_id: episode.data_id || episode.id || '',
+        episode_no: episode.episode_no || episode.number || 1,
+        title: episode.title || episode.name || '',
+        id: episode.id || ''
+    };
+}
 
 // Mostrar/ocultar loading
 function showLoading(show = true) {
@@ -50,49 +61,35 @@ async function loadAnimeInfo(animeId) {
 }
 
 // Cargar episodios
-async function loadEpisode(episode) {
-    // GUARDAR EL ID CORRECTO
-    currentEpisodeDataId = episode.data_id || episode.id; // Fallback si data_id no existe
-    
-    console.log('Cargando episodio:', episode);
-    console.log('data_id:', currentEpisodeDataId);
-
-    document.getElementById('episode-title').textContent = 
-        `Episodio ${episode.episode_no}${episode.title ? `: ${episode.title}` : ''}`;
-
-    // Actualizar UI de episodios
-    renderEpisodeList(episodeList, currentEpisodeDataId);
-
-    // Cargar servidores con el ID correcto
-    showLoading(true);
-    const servers = await loadServers(currentAnimeId, currentEpisodeDataId);
-    renderServers(servers, currentAnimeId, currentEpisodeDataId);
-    
-    // Auto-cargar primer servidor
-    if (servers.length > 0) {
-        const first = servers[0];
-        const url = await getStreamUrl(currentAnimeId, first.server_id, currentEpisodeDataId, first.type || 'sub');
-        if (url) {
-            document.getElementById('video-player').innerHTML = `
-                <video class="video-player" controls autoplay playsinline>
-                    <source src="${url}" type="video/mp4">
-                    Tu navegador no soporta el video.
-                </video>
-            `;
+async function loadEpisodes(animeId) {
+    try {
+        showLoading(true);
+        const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.EPISODES}/${encodeURIComponent(animeId)}`);
+        const data = await res.json();
+        
+        if (!data?.success || !Array.isArray(data.results?.episodes)) {
+            console.warn('No hay episodios disponibles o formato incorrecto');
+            return [];
         }
+        
+        // Normalizar episodios
+        return data.results.episodes.map(ep => normalizeEpisodeData(ep));
+    } catch (err) {
+        console.error('Error al cargar episodios:', err);
+        showError('No se pudieron cargar los episodios.');
+        return [];
+    } finally {
+        showLoading(false);
     }
-    showLoading(false);
-
-    // Actualizar URL
-    const newUrl = new URL(window.location);
-    newUrl.searchParams.set('ep', episode.episode_no);
-    window.history.replaceState(null, '', newUrl);
 }
 
 // Cargar servidores
 async function loadServers(animeId, epDataId) {
     try {
-        // IMPORTANTE: La URL debe ser /api/servers/{animeId}?ep={epDataId}
+        if (!epDataId) {
+            throw new Error('epDataId es undefined');
+        }
+        
         const url = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SERVERS}/${encodeURIComponent(animeId)}?ep=${epDataId}`;
         console.log('Cargando servidores:', url);
         
@@ -113,7 +110,6 @@ async function loadServers(animeId, epDataId) {
 // Obtener enlace de streaming
 async function getStreamUrl(animeId, serverId, epDataId, type = 'sub') {
     try {
-        // IMPORTANTE: Parámetros en query string
         const url = new URL(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.STREAM}`);
         url.searchParams.append('id', animeId);
         url.searchParams.append('server', serverId);
@@ -206,7 +202,7 @@ function renderServers(servers, animeId, epDataId) {
 
     container.innerHTML = html;
 
-    // Eventos para cada botón
+    // Eventos
     container.querySelectorAll('.server-button').forEach(btn => {
         btn.onclick = async () => {
             const serverId = btn.dataset.server;
@@ -228,9 +224,13 @@ function renderServers(servers, animeId, epDataId) {
     });
 }
 
-// Cargar un episodio completo
+// Cargar un episodio
 async function loadEpisode(episode) {
     currentEpisodeDataId = episode.data_id;
+    
+    console.log('Cargando episodio:', episode);
+    console.log('data_id guardado:', currentEpisodeDataId);
+
     document.getElementById('episode-title').textContent = 
         `Episodio ${episode.episode_no}${episode.title ? `: ${episode.title}` : ''}`;
 
@@ -242,7 +242,7 @@ async function loadEpisode(episode) {
     const servers = await loadServers(currentAnimeId, episode.data_id);
     renderServers(servers, currentAnimeId, episode.data_id);
     
-    // Cargar primer servidor automáticamente
+    // Auto-cargar primer servidor
     if (servers.length > 0) {
         const first = servers[0];
         const url = await getStreamUrl(currentAnimeId, first.server_id, episode.data_id, first.type || 'sub');
@@ -284,12 +284,11 @@ async function init() {
 
     episodeList = await loadEpisodes(animeId);
     
-    // **DEBUG CRÍTICO**
-    console.log('=== DEPURACIÓN EPISODIOS ===');
-    console.log('episodeList:', episodeList);
+    // DEBUG
+    console.log('=== DEPURACIÓN ===');
+    console.log('EpisodeList:', episodeList);
     console.log('Primer episodio:', episodeList[0]);
-    console.log('Tiene data_id?', episodeList[0]?.data_id);
-    console.log('Tiene id?', episodeList[0]?.id);
+    console.log('data_id:', episodeList[0]?.data_id);
 
     if (!episodeList || episodeList.length === 0) {
         showLoading(false);
@@ -308,38 +307,8 @@ async function init() {
     }
 
     showLoading(false);
-}
 
-    // Cargar información del anime
-    animeInfo = await loadAnimeInfo(animeId);
-    if (!animeInfo) {
-        showLoading(false);
-        return;
-    }
-
-    // Cargar lista de episodios
-    episodeList = await loadEpisodes(animeId);
-    if (!episodeList || episodeList.length === 0) {
-        showLoading(false);
-        showError('Este anime no tiene episodios disponibles.');
-        return;
-    }
-
-    // Renderizar información básica
-    renderAnimeInfo(animeInfo);
-    renderEpisodeList(episodeList);
-
-    // Determinar episodio inicial
-    const epNo = parseInt(urlParams.get('ep')) || 1;
-    const targetEp = episodeList.find(ep => ep.episode_no === epNo) || episodeList[0];
-    
-    if (targetEp) {
-        await loadEpisode(targetEp);
-    }
-
-    showLoading(false);
-
-    // Configurar navegación
+    // Navegación
     const prevBtn = document.getElementById('prev-episode');
     const nextBtn = document.getElementById('next-episode');
 
@@ -358,5 +327,5 @@ async function init() {
     }
 }
 
-// Iniciar cuando DOM esté listo
+// Iniciar
 document.addEventListener('DOMContentLoaded', init);
