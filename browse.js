@@ -361,4 +361,8 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Inicializando página de exploración...');
     initFromURL();
     loadAnime(1);
+    
+    // Event listeners para botones
+    document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
+    document.getElementById('clearFiltersBtn').addEventListener('click', clearFilters);
 });
