@@ -27,19 +27,29 @@ document.addEventListener('DOMContentLoaded', async function() {
         const response = await fetch(`${window.API_CONFIG.BASE_URL}${window.API_CONFIG.ENDPOINTS.EPISODES}/${animeId}`);
         
         if (!response.ok) {
-            throw new Error(`Error HTTP ${response.status}: ${response.statusText}`);
+            throw new Error(`No se pudo conectar con el servidor (HTTP ${response.status})`);
         }
         
         const data = await response.json();
         
+        // Validar estructura de respuesta
+        if (!data || typeof data !== 'object') {
+            throw new Error('Respuesta inválida del servidor');
+        }
+        
         if (!data.success) {
-            throw new Error(data.error || 'La API no devolvió éxito');
+            throw new Error(data.error || 'El servidor no pudo procesar la solicitud');
         }
         
-        if (!data.results || !Array.isArray(data.results.episodes)) {
-            throw new Error('Formato de respuesta inválido: no hay episodios');
+        if (!data.results || typeof data.results !== 'object') {
+            throw new Error('Formato de respuesta inválido');
         }
         
+        if (!Array.isArray(data.results.episodes)) {
+            throw new Error('No se encontraron episodios en la respuesta');
+        }
+        
+        // Normalizar episodios
         episodeList = data.results.episodes.map(window.normalizeData.episode);
         
         if (episodeList.length === 0) {
@@ -48,6 +58,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         console.log('✅ Episodios cargados:', episodeList.length);
         
+        // Renderizar lista de episodios
+        renderEpisodeList();
+        
         // Cargar primer episodio
         await loadEpisode(episodeList[0]);
         hideLoading();
@@ -55,15 +68,50 @@ document.addEventListener('DOMContentLoaded', async function() {
     } catch (error) {
         console.error('❌ Error al cargar episodios:', error);
         hideLoading();
-        showError('No se pudieron cargar los episodios: ' + error.message);
+        
+        // Mostrar mensaje de error específico
+        let errorMessage = 'No se pudieron cargar los episodios';
+        if (error.message.includes('no tiene episodios')) {
+            errorMessage = '❌ Este anime no tiene episodios disponibles';
+        } else if (error.message.includes('HTTP')) {
+            errorMessage = '❌ Error de conexión con el servidor. Verifica tu conexión a internet.';
+        } else {
+            errorMessage = `❌ ${error.message}`;
+        }
+        
+        showError(errorMessage);
+        
+        // Mostrar mensaje en el contenedor principal
+        const videoContainer = document.querySelector('.video-container');
+        if (videoContainer) {
+            videoContainer.innerHTML = `
+                <div style="text-align:center;padding:3rem;color:#ff6b9d;background:#1a1a2e;border-radius:12px;">
+                    <h3>⚠️ No se pudieron cargar los episodios</h3>
+                    <p style="margin:1rem 0;">${error.message}</p>
+                    <button onclick="location.reload()" style="margin-top:1.5rem;padding:0.6rem 1.5rem;background:#ff6b9d;border:none;border-radius:8px;color:white;cursor:pointer;font-weight:600;">🔄 Reintentar</button>
+                </div>
+            `;
+        }
     }
 });
 
 async function loadEpisode(episode) {
-    // Extraer ID limpio
+    // Validar que el episodio tenga un ID
+    if (!episode || !episode.id) {
+        showError('Episodio inválido: no tiene ID');
+        return;
+    }
+    
+    // Extraer ID limpio del formato "anime-id?ep=episode-id"
     let cleanEpisodeId = episode.id;
     if (episode.id.includes('?ep=')) {
-        cleanEpisodeId = episode.id.split('?ep=')[1];
+        const parts = episode.id.split('?ep=');
+        if (parts.length === 2 && parts[1]) {
+            cleanEpisodeId = parts[1];
+        } else {
+            showError('Formato de ID de episodio inválido');
+            return;
+        }
     }
     
     currentEpisodeId = cleanEpisodeId;
@@ -72,25 +120,40 @@ async function loadEpisode(episode) {
     console.log('🔑 ID limpio:', currentEpisodeId);
     
     // Actualizar UI
-    document.getElementById('episode-title').textContent = 
-        `Episodio ${episode.episode_no}${episode.title ? `: ${episode.title}` : ''}`;
+    const episodeTitleElement = document.getElementById('episode-title');
+    if (episodeTitleElement) {
+        episodeTitleElement.textContent = 
+            `Episodio ${episode.episode_no}${episode.title ? `: ${episode.title}` : ''}`;
+    }
     
     // Resetear reproductor
     resetVideoPlayer();
     
     // Cargar servidores
     try {
+        showLoading('📡 Cargando servidores...');
+        
         const serversUrl = `${window.API_CONFIG.BASE_URL}${window.API_CONFIG.ENDPOINTS.SERVERS}/${currentAnimeId}?ep=${currentEpisodeId}`;
         console.log('📡 URL Servidores:', serversUrl);
         
         const serversResponse = await fetch(serversUrl);
-        const serversData = await serversResponse.json();
         
-        if (!serversData.success) {
-            throw new Error('No se pudo obtener la lista de servidores');
+        if (!serversResponse.ok) {
+            throw new Error(`Error HTTP ${serversResponse.status}: No se pudieron cargar los servidores`);
         }
         
-        if (!serversData.results || serversData.results.length === 0) {
+        const serversData = await serversResponse.json();
+        
+        // Validar estructura de respuesta
+        if (!serversData || typeof serversData !== 'object') {
+            throw new Error('Respuesta de servidores inválida');
+        }
+        
+        if (!serversData.success) {
+            throw new Error(serversData.error || 'No se pudo obtener la lista de servidores');
+        }
+        
+        if (!serversData.results || !Array.isArray(serversData.results) || serversData.results.length === 0) {
             throw new Error('No hay servidores disponibles para este episodio');
         }
         
@@ -99,15 +162,18 @@ async function loadEpisode(episode) {
         renderServers(serversData.results);
         
         // Intentar cargar el primer servidor automáticamente
-        if (serversData.results.length > 0) {
-            const firstServer = serversData.results[0];
+        const firstServer = serversData.results[0];
+        if (firstServer && firstServer.server_id) {
             await loadVideo(firstServer.server_id, firstServer.type || 'sub');
         } else {
             throw new Error('No se encontraron servidores válidos');
         }
         
+        hideLoading();
+        
     } catch (error) {
         console.error('❌ Error al cargar servidores:', error);
+        hideLoading();
         showError('Error con los servidores: ' + error.message);
     }
 }
@@ -132,45 +198,70 @@ async function loadVideo(serverId, type) {
     try {
         showLoading('📡 Cargando video del servidor...');
         
+        // Validar parámetros requeridos
+        if (!currentAnimeId || !currentEpisodeId || !serverId) {
+            throw new Error('Faltan parámetros requeridos para cargar el video');
+        }
+        
         const streamUrl = `${window.API_CONFIG.BASE_URL}${window.API_CONFIG.ENDPOINTS.STREAM}?id=${currentAnimeId}&server=${serverId}&type=${type}&ep=${currentEpisodeId}`;
         console.log('📡 URL Stream:', streamUrl);
         
         const response = await fetch(streamUrl);
         
         if (!response.ok) {
-            throw new Error(`Error HTTP ${response.status}: ${response.statusText}`);
+            throw new Error(`Servidor no disponible (HTTP ${response.status}). Intenta con otro servidor.`);
         }
         
         const data = await response.json();
         
-        if (!data.success) {
-            throw new Error(data.error || 'El servidor no devolvió éxito');
+        // Validar estructura de respuesta básica
+        if (!data || typeof data !== 'object') {
+            throw new Error('Respuesta inválida del servidor');
         }
         
-        if (!data.results) {
+        if (!data.success) {
+            throw new Error(data.error || 'El servidor no pudo procesar la solicitud');
+        }
+        
+        if (!data.results || typeof data.results !== 'object') {
             throw new Error('Respuesta vacía del servidor');
         }
         
         // DEPURACIÓN: Ver estructura real
         console.log('📦 Respuesta completa de la API:', data);
         console.log('📦 streamingLink:', data.results.streamingLink);
-        console.log('📦 servers:', data.results.servers);
         
-        // Verificar si hay streamingLink
-        if (!data.results.streamingLink || !Array.isArray(data.results.streamingLink) || data.results.streamingLink.length === 0) {
-            throw new Error('No hay datos de streaming disponibles');
+        // Validar que existe streamingLink y es un array con elementos
+        if (!data.results.streamingLink) {
+            throw new Error('No hay datos de streaming en la respuesta');
+        }
+        
+        if (!Array.isArray(data.results.streamingLink)) {
+            throw new Error('Formato de datos de streaming inválido');
+        }
+        
+        if (data.results.streamingLink.length === 0) {
+            throw new Error('No hay enlaces de streaming disponibles para este servidor');
         }
         
         const streamData = data.results.streamingLink[0];
         console.log('📦 Primer streamingLink:', streamData);
         
-        // Verificar si hay link y file
-        if (!streamData.link || !streamData.link.file) {
-            throw new Error('Enlace de video no disponible en este servidor');
+        // Validar estructura anidada: streamingLink[0].link.file
+        if (!streamData || typeof streamData !== 'object') {
+            throw new Error('Datos de streaming inválidos');
+        }
+        
+        if (!streamData.link || typeof streamData.link !== 'object') {
+            throw new Error('Enlace de video no encontrado en la respuesta');
+        }
+        
+        if (!streamData.link.file || typeof streamData.link.file !== 'string') {
+            throw new Error('URL del video no disponible en este servidor. Intenta con otro servidor.');
         }
         
         const videoUrl = streamData.link.file;
-        const tracks = streamData.tracks || [];
+        const tracks = Array.isArray(streamData.tracks) ? streamData.tracks : [];
         
         console.log('✅ Video URL encontrada:', videoUrl);
         console.log('📝 Subtítulos encontrados:', tracks.length);
@@ -192,16 +283,18 @@ async function loadVideo(serverId, type) {
         hideLoading();
         showError('No se pudo cargar el video: ' + error.message);
         
-        // Mostrar mensaje en el reproductor
+        // Mostrar mensaje en el reproductor con opciones
         const videoContainer = document.querySelector('.video-container');
-        videoContainer.innerHTML = `
-            <div style="text-align:center;padding:3rem;color:#ff6b9d;background:#1a1a2e;border-radius:12px;">
-                <h3>⚠️ Error al cargar el video</h3>
-                <p>${error.message}</p>
-                <p style="font-size:0.9rem;margin-top:1rem;">Intenta seleccionar otro servidor</p>
-                <button onclick="location.reload()" style="margin-top:1rem;padding:0.5rem 1rem;background:#ff6b9d;border:none;border-radius:5px;color:white;cursor:pointer;">Reintentar</button>
-            </div>
-        `;
+        if (videoContainer) {
+            videoContainer.innerHTML = `
+                <div style="text-align:center;padding:3rem;color:#ff6b9d;background:#1a1a2e;border-radius:12px;">
+                    <h3>⚠️ Error al cargar el video</h3>
+                    <p style="margin:1rem 0;">${error.message}</p>
+                    <p style="font-size:0.9rem;color:#aaa;">Intenta seleccionar otro servidor de la lista</p>
+                    <button onclick="location.reload()" style="margin-top:1.5rem;padding:0.6rem 1.5rem;background:#ff6b9d;border:none;border-radius:8px;color:white;cursor:pointer;font-weight:600;">🔄 Reintentar</button>
+                </div>
+            `;
+        }
     }
 }
 

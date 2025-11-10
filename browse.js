@@ -218,10 +218,20 @@ async function loadAnime(page = 1) {
         grid.innerHTML = '';
         
         if (animeList.length === 0) {
+            const noResultsMessage = filters.search 
+                ? `No se encontraron resultados para "${filters.search}"` 
+                : 'No se encontraron resultados';
+            
             grid.innerHTML = `
                 <div class="loading-container" style="grid-column: 1/-1;">
                     <div style="font-size: 3rem; margin-bottom: 1rem;">😢</div>
-                    <div>No se encontraron resultados${filters.search ? ` para "${filters.search}"` : ''}</div>
+                    <div style="font-size: 1.2rem; margin-bottom: 1rem;">${noResultsMessage}</div>
+                    ${filters.search ? `
+                        <button onclick="window.location.href='browse.html?category=most-popular'" 
+                                style="margin-top: 1rem; padding: 0.8rem 1.5rem; background: var(--primary-color); border: none; border-radius: 8px; color: white; cursor: pointer; font-size: 1rem;">
+                            Explorar Anime Popular
+                        </button>
+                    ` : ''}
                 </div>
             `;
             resultsCount.innerHTML = `<strong>📊 0 resultados</strong>`;
@@ -341,18 +351,27 @@ function initFromURL() {
         'movie': { title: 'Películas de Anime', desc: 'Descubre las mejores películas de anime' },
         'tv': { title: 'Series de Anime', desc: 'Explora series de anime completas' },
         'most-popular': { title: 'Anime Más Populares', desc: 'Los animes más vistos y populares' },
-        'top-airing': { title: 'Top En Emisión', desc: 'Los mejores animes actualmente en emisión' },
-        'search': { title: 'Resultados de Búsqueda', desc: `Resultados para "${search}"` }
+        'top-airing': { title: 'Top En Emisión', desc: 'Los mejores animes actualmente en emisión' }
     };
     
+    // Manejar búsqueda
     if (search) {
         window.currentFilters.search = search;
-        document.getElementById('pageTitle').textContent = titles.search?.title || 'Búsqueda';
-        document.getElementById('pageDescription').textContent = titles.search?.desc || `Resultados para "${search}"`;
-        document.querySelector('.filters-section').style.display = 'none';
+        window.currentFilters.genre = '';
+        window.currentFilters.type = '';
+        window.currentFilters.sort = '';
+        
+        document.getElementById('pageTitle').textContent = 'Resultados de Búsqueda';
+        document.getElementById('pageDescription').textContent = `Resultados para "${search}"`;
+        
+        const filtersSection = document.querySelector('.filters-section');
+        if (filtersSection) {
+            filtersSection.style.display = 'none';
+        }
         return;
     }
     
+    // Manejar categorías
     if (category && titles[category]) {
         document.getElementById('pageTitle').textContent = titles[category].title;
         document.getElementById('pageDescription').textContent = titles[category].desc;

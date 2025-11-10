@@ -20,8 +20,15 @@
                     <div class="logo">
                         <h1><a href="index.html" style="text-decoration: none; color: inherit;">🎌 Doki Doki Anime</a></h1>
                     </div>
+                    <ul class="nav-menu">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="browse.html?category=movie">Movies</a></li>
+                        <li><a href="browse.html?category=tv">TV Series</a></li>
+                        <li><a href="browse.html?category=most-popular">Most Popular</a></li>
+                        <li><a href="browse.html?category=top-airing">Top Airing</a></li>
+                    </ul>
                     <button id="back-btn" class="back-btn">← Volver</button>
-                    <button class="mobile-menu-toggle" style="display: none;">☰</button>
+                    <button class="mobile-menu-toggle">☰</button>
                 </div>
             </div>
         </nav>
@@ -89,5 +96,42 @@
     <script src="api-config.js"></script>
     <script src="api-adapter.js"></script>
     <script src="watch.js"></script>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+        const navMenu = document.querySelector('.nav-menu');
+
+        if (mobileMenuToggle && navMenu) {
+            mobileMenuToggle.addEventListener('click', () => {
+                navMenu.classList.toggle('active');
+            });
+
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!navMenu.contains(e.target) && !mobileMenuToggle.contains(e.target)) {
+                    navMenu.classList.remove('active');
+                }
+            });
+
+            // Close menu when clicking on a link
+            const navLinks = navMenu.querySelectorAll('a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    navMenu.classList.remove('active');
+                });
+            });
+        }
+
+        // Highlight active page
+        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+        const navLinks = document.querySelectorAll('.nav-menu a');
+        navLinks.forEach(link => {
+            const linkPage = link.getAttribute('href').split('?')[0];
+            if (linkPage === currentPage || (currentPage === 'watch.html' && linkPage === 'watch.html')) {
+                link.classList.add('active');
+            }
+        });
+    </script>
 </body>
 </html>

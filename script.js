@@ -40,7 +40,15 @@ function initSearchBar() {
 
 async function performSearch(query) {
     if (!query || query.length < 2) {
-        alert('Por favor, ingresa al menos 2 caracteres para buscar');
+        // Mostrar mensaje de error más amigable
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.style.border = '2px solid #ff4444';
+            setTimeout(() => {
+                searchInput.style.border = '';
+            }, 2000);
+        }
+        showError('Por favor, ingresa al menos 2 caracteres para buscar');
         return;
     }
     
