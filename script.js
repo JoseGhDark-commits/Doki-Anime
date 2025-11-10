@@ -1,5 +1,3 @@
-// script.js - Funcionalidad principal con configuración centralizada
-import { API_CONFIG } from './api-config.js';
 
 // Inicializar la aplicación
 document.addEventListener('DOMContentLoaded', () => {
