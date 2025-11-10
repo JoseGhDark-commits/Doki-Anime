@@ -242,7 +242,7 @@ function createPagination(currentPage, totalPages) {
     nextBtn.onclick = () => {
         if (currentPage < totalPages) {
             loadAnime(currentPage + 1);
-            window.scrollTo({ top: 0, behavior: 'smooth' );
+           window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
     pagination.appendChild(nextBtn);
