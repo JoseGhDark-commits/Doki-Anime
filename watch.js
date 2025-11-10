@@ -1,7 +1,8 @@
-// watch.js - VERSIÓN CORREGIDA Y MEJORADA
+// watch.js - VERSIÓN FINAL CON SUBTÍTULOS FUNCIONALES
 let currentAnimeId = null;
 let currentEpisodeId = null;
 let episodeList = [];
+let currentTextTracks = [];
 
 document.addEventListener('DOMContentLoaded', async function() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -14,12 +15,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     currentAnimeId = animeId;
     
-    // Configurar botón de volver
+    // Botón volver
     document.getElementById('back-btn').addEventListener('click', () => {
         window.history.back();
     });
     
-    // Cargar episodios
     try {
         showLoading('Cargando episodios...');
         
@@ -30,72 +30,53 @@ document.addEventListener('DOMContentLoaded', async function() {
             throw new Error('No se pudieron cargar los episodios');
         }
         
-        // Normalizar usando el adaptador
         episodeList = data.results.episodes.map(window.normalizeData.episode);
         
-        console.log('✅ Episodios cargados:', episodeList);
-        
         if (episodeList.length === 0) {
-            throw new Error('No hay episodios disponibles para este anime');
+            throw new Error('No hay episodios disponibles');
         }
         
-        // Cargar primer episodio
         await loadEpisode(episodeList[0]);
-        
         hideLoading();
         
     } catch (error) {
         console.error('Error:', error);
         hideLoading();
-        showError('Error al cargar el anime: ' + error.message);
+        showError('Error: ' + error.message);
     }
 });
 
 async function loadEpisode(episode) {
-    // EXTRAER EL ID REAL DEL EPISODIO (la parte después de ?ep=)
+    // Extraer ID limpio
     let cleanEpisodeId = episode.id;
     if (episode.id.includes('?ep=')) {
-        const parts = episode.id.split('?ep=');
-        cleanEpisodeId = parts[1]; // Tomar solo el número del episodio
+        cleanEpisodeId = episode.id.split('?ep=')[1];
     }
     
-    currentEpisodeId = cleanEpisodeId; // USAR EL ID LIMPIO
+    currentEpisodeId = cleanEpisodeId;
     
-    console.log('🎬 Cargando episodio:', episode);
-    console.log('🔑 ID del episodio CORREGIDO:', currentEpisodeId);
-    
-    // Actualizar título
+    // Actualizar títulos
     document.getElementById('episode-title').textContent = 
         `Episodio ${episode.episode_no}${episode.title ? `: ${episode.title}` : ''}`;
     
-    // Mostrar loading
+    // Mostrar loading en el reproductor
     document.getElementById('video-player').innerHTML = `
-        <div style="display: flex; justify-content: center; align-items: center; height: 300px; flex-direction: column; color: white;">
+        <div class="loading-container">
             <div class="loading-spinner"></div>
-            <p style="margin-top: 1rem;">Cargando servidores...</p>
+            <p>Cargando servidores...</p>
         </div>
     `;
     
-    // Renderizar lista
     renderEpisodeList();
     
-    // Cargar servidores - CON URL CORRECTA
     try {
         const serversUrl = `${window.API_CONFIG.BASE_URL}${window.API_CONFIG.ENDPOINTS.SERVERS}/${currentAnimeId}?ep=${currentEpisodeId}`;
-        console.log('📡 URL Servidores CORREGIDA:', serversUrl);
-        
         const serversResponse = await fetch(serversUrl);
         const serversData = await serversResponse.json();
         
-        if (!serversData.success) {
-            throw new Error('Error en la respuesta de la API');
+        if (!serversData.success || !serversData.results?.length) {
+            throw new Error('No hay servidores disponibles');
         }
-        
-        if (!serversData.results || serversData.results.length === 0) {
-            throw new Error('No hay servidores disponibles para este episodio');
-        }
-        
-        console.log('✅ Servidores recibidos:', serversData.results);
         
         renderServers(serversData.results);
         
@@ -116,53 +97,89 @@ async function loadVideo(serverId, type) {
         showLoading('Cargando video...');
         
         const streamUrl = `${window.API_CONFIG.BASE_URL}${window.API_CONFIG.ENDPOINTS.STREAM}?id=${currentAnimeId}&server=${serverId}&type=${type}&ep=${currentEpisodeId}`;
-        
-        console.log('📡 URL Stream:', streamUrl);
-        
         const response = await fetch(streamUrl);
         const data = await response.json();
         
-        if (!data.success) {
-            throw new Error('Error en la respuesta del servidor de video');
-        }
+        if (!data.success) throw new Error('Error en la respuesta del servidor');
         
-        if (!data.results?.streamingLink?.[0]?.link?.file) {
-            throw new Error('Enlace de video no disponible en este servidor');
-        }
+        const streamData = data.results?.streamingLink?.[0];
+        if (!streamData?.link?.file) throw new Error('Enlace de video no disponible');
         
-        const videoUrl = data.results.streamingLink[0].link.file;
+        const videoUrl = streamData.link.file;
+        const tracks = streamData.tracks || [];
         
-        console.log('✅ Video URL encontrada:', videoUrl);
+        console.log('✅ Video:', videoUrl);
+        console.log('📝 Subtítulos:', tracks);
         
-        // Crear reproductor de video
-        document.getElementById('video-player').innerHTML = `
-            <video class="video-player" controls autoplay playsinline style="width: 100%; max-height: 70vh; background: #000;">
+        // Crear reproductor
+        const videoContainer = document.querySelector('.video-container');
+        videoContainer.innerHTML = `
+            <video id="video-player" class="video-player" controls autoplay playsinline>
                 <source src="${videoUrl}" type="video/mp4">
-                <source src="${videoUrl}" type="video/webm">
-                Tu navegador no soporta el elemento de video.
+                Tu navegador no soporta este video.
             </video>
+            <div class="video-controls">
+                <button id="subtitle-toggle" class="control-btn" style="display: none;" title="Subtítulos">CC</button>
+                <select id="subtitle-selector" class="control-select" style="display: none;">
+                    <option value="">🚫 Desactivar</option>
+                </select>
+            </div>
         `;
         
-        // Configurar eventos del video
-        const videoElement = document.querySelector('.video-player');
-        videoElement.addEventListener('error', (e) => {
-            console.error('Error en video:', e);
-            showError('Error al reproducir el video. Intenta con otro servidor.');
-        });
+        const video = document.getElementById('video-player');
         
-        videoElement.addEventListener('loadeddata', () => {
-            console.log('✅ Video cargado correctamente');
-            hideLoading();
-        });
+        // ===== GESTIÓN DE SUBTÍTULOS =====
+        if (tracks.length > 0) {
+            tracks.forEach((track, index) => {
+                const trackElement = document.createElement('track');
+                trackElement.kind = 'subtitles';
+                trackElement.label = track.label || `Sub ${index + 1}`;
+                trackElement.srclang = track.language || 'es';
+                trackElement.src = track.file;
+                trackElement.default = index === 0;
+                video.appendChild(trackElement);
+                
+                // Opción en el selector
+                const option = document.createElement('option');
+                option.value = track.file;
+                option.textContent = track.label || `Sub ${index + 1}`;
+                document.getElementById('subtitle-selector').appendChild(option);
+            });
+            
+            // Mostrar controles
+            document.getElementById('subtitle-toggle').style.display = 'inline-block';
+            document.getElementById('subtitle-selector').style.display = 'inline-block';
+            
+            // Evento para el selector
+            document.getElementById('subtitle-selector').addEventListener('change', (e) => {
+                Array.from(video.textTracks).forEach(track => track.mode = 'disabled');
+                if (e.target.value) {
+                    const selectedTrack = Array.from(video.textTracks).find(
+                        t => t.label === e.target.selectedOptions[0].text
+                    );
+                    if (selectedTrack) selectedTrack.mode = 'showing';
+                }
+            });
+            
+            // Toggle CC
+            document.getElementById('subtitle-toggle').addEventListener('click', () => {
+                const selector = document.getElementById('subtitle-selector');
+                selector.style.display = selector.style.display === 'none' ? 'inline-block' : 'none';
+            });
+        }
         
-        videoElement.addEventListener('canplay', () => {
-            hideLoading();
+        // Eventos del video
+        video.addEventListener('loadeddata', () => hideLoading());
+        video.addEventListener('canplay', () => hideLoading());
+        video.addEventListener('error', (e) => {
+            console.error('Error video:', e);
+            showError('Error al reproducir. Intenta otro servidor.');
         });
         
     } catch (error) {
         console.error('Error video:', error);
         hideLoading();
-        showError('Error al cargar el video: ' + error.message);
+        showError('Error: ' + error.message);
     }
 }
 
@@ -181,7 +198,6 @@ function renderEpisodeList() {
         container.appendChild(button);
     });
     
-    // Configurar navegación entre episodios
     setupEpisodeNavigation();
 }
 
@@ -193,18 +209,14 @@ function setupEpisodeNavigation() {
     if (prevBtn) {
         prevBtn.disabled = currentIndex <= 0;
         prevBtn.onclick = () => {
-            if (currentIndex > 0) {
-                loadEpisode(episodeList[currentIndex - 1]);
-            }
+            if (currentIndex > 0) loadEpisode(episodeList[currentIndex - 1]);
         };
     }
     
     if (nextBtn) {
         nextBtn.disabled = currentIndex >= episodeList.length - 1;
         nextBtn.onclick = () => {
-            if (currentIndex < episodeList.length - 1) {
-                loadEpisode(episodeList[currentIndex + 1]);
-            }
+            if (currentIndex < episodeList.length - 1) loadEpisode(episodeList[currentIndex + 1]);
         };
     }
 }
@@ -213,11 +225,10 @@ function renderServers(servers) {
     const container = document.getElementById('server-selector');
     if (!container) return;
     
-    container.innerHTML = '<h3>🎯 Servidores Disponibles</h3>';
+    container.innerHTML = '<h3>🎯 Servidores</h3>';
     
     const sub = servers.filter(s => s.type === 'sub');
     const dub = servers.filter(s => s.type === 'dub');
-    const other = servers.filter(s => s.type !== 'sub' && s.type !== 'dub');
     
     if (sub.length > 0) {
         container.innerHTML += '<h4>🔤 Subtitulado</h4>' + 
@@ -236,86 +247,45 @@ function renderServers(servers) {
                 </button>
             `).join('');
     }
-    
-    if (other.length > 0) {
-        container.innerHTML += '<h4>🔗 Otros</h4>' + 
-            other.map(s => `
-                <button onclick="loadVideo('${s.server_id}','${s.type}')" class="server-button">
-                    ${s.serverName || `Servidor ${s.server_id}`} (${s.type})
-                </button>
-            `).join('');
-    }
-    
-    // Si no hay servidores
-    if (sub.length === 0 && dub.length === 0 && other.length === 0) {
-        container.innerHTML += '<p style="color: #ff6b9d; text-align: center; padding: 1rem;">No hay servidores disponibles</p>';
-    }
 }
 
+// Funciones de UI
 function showLoading(message = 'Cargando...') {
-    let loading = document.getElementById('loading');
+    const loading = document.getElementById('loading');
     if (loading) {
         loading.style.display = 'flex';
-        loading.innerHTML = `
-            <div class="spinner"></div>
-            <div>${message}</div>
-        `;
+        loading.innerHTML = `<div class="spinner"></div><div>${message}</div>`;
     }
 }
 
 function hideLoading() {
     const loading = document.getElementById('loading');
-    if (loading) {
-        loading.style.display = 'none';
-    }
+    if (loading) loading.style.display = 'none';
 }
 
 function showError(message) {
-    // Usar el contenedor de error si existe, sino crear uno
-    let errorDiv = document.getElementById('error-message');
-    if (!errorDiv) {
-        errorDiv = document.createElement('div');
-        errorDiv.id = 'error-message';
-        errorDiv.style.cssText = `
-            background: #ff4444;
-            color: white;
-            padding: 1rem;
-            border-radius: 8px;
-            margin: 1rem 0;
-            text-align: center;
-            display: none;
-        `;
-        document.querySelector('.container').prepend(errorDiv);
-    }
+    const errorDiv = document.getElementById('error-message');
+    if (!errorDiv) return;
     
     errorDiv.innerHTML = `
         <strong>⚠️ Error:</strong> ${message}
-        <button onclick="this.parentElement.style.display='none'" 
-                style="margin-left: 1rem; background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer;">
-            ×
-        </button>
+        <button onclick="this.parentElement.style.display='none'" style="margin-left: 1rem;">×</button>
     `;
     errorDiv.style.display = 'block';
     
-    // También mostrar en el reproductor de video
+    // Mostrar en reproductor también
     document.getElementById('video-player').innerHTML = `
-        <div style="text-align: center; padding: 3rem; color: #ff6b9d;">
+        <div style="text-align:center;padding:3rem;color:#ff6b9d;">
             <h3>⚠️ Error</h3>
             <p>${message}</p>
-            <button onclick="location.reload()" 
-                    style="margin-top: 1rem; padding: 0.5rem 1rem; background: #ff6b9d; border: none; border-radius: 5px; color: white; cursor: pointer;">
-                Reintentar
-            </button>
+            <button onclick="location.reload()" style="margin-top:1rem;padding:0.5rem 1rem;background:#ff6b9d;border:none;border-radius:5px;color:white;cursor:pointer;">Reintentar</button>
         </div>
     `;
 }
 
-// Manejar errores globales
-window.addEventListener('error', (e) => {
-    console.error('Error global:', e);
-});
-
+// Manejo de errores global
+window.addEventListener('error', (e) => console.error('Error global:', e));
 window.addEventListener('unhandledrejection', (e) => {
     console.error('Promise rechazada:', e);
-    showError('Error inesperado: ' + e.reason?.message || 'Error desconocido');
+    showError('Error inesperado: ' + (e.reason?.message || 'Error desconocido'));
 });
