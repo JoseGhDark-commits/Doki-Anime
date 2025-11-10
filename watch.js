@@ -1,4 +1,4 @@
-import { API_CONFIG } from './api-config.js';
+
 
 let currentAnimeId = null;
 let currentEpisodeDataId = null;
