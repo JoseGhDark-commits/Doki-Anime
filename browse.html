@@ -8,219 +8,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        .browse-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem 1rem;
-        }
-
-        .page-header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-
-        .page-header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, var(--primary-color), var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .filters-section {
-            background: var(--card-bg);
-            padding: 1.5rem;
-            border-radius: 15px;
-            margin-bottom: 2rem;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .filters-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .filter-group label {
-            color: var(--text-primary);
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .filter-group select,
-        .filter-group input {
-            width: 100%;
-            padding: 0.7rem;
-            background: rgba(255, 107, 157, 0.1);
-            border: 2px solid rgba(255, 107, 157, 0.3);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-family: 'Poppins', sans-serif;
-            font-size: 0.95rem;
-        }
-
-        .filter-group select:focus,
-        .filter-group input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
-
-        .filter-group select option {
-            background: var(--card-bg);
-            color: var(--text-primary);
-        }
-
-        .filter-buttons {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-
-        .filter-buttons button {
-            flex: 1;
-            padding: 0.8rem;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 1rem;
-        }
-
-        .apply-filter {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-        }
-
-        .apply-filter:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 107, 157, 0.4);
-        }
-
-        .clear-filter {
-            background: rgba(255, 107, 157, 0.2);
-            color: var(--text-primary);
-            border: 2px solid var(--primary-color);
-        }
-
-        .clear-filter:hover {
-            background: rgba(255, 107, 157, 0.3);
-        }
-
-        .results-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            color: var(--text-secondary);
-            padding: 1rem;
-            background: var(--card-bg);
-            border-radius: 10px;
-        }
-
-        .results-info div {
-            font-size: 1rem;
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-top: 3rem;
-            flex-wrap: wrap;
-            padding: 1rem 0;
-        }
-
-        .pagination button {
-            min-width: 45px;
-            padding: 0.7rem 1rem;
-            background: rgba(255, 107, 157, 0.2);
-            border: 2px solid var(--primary-color);
-            color: var(--text-primary);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-weight: 600;
-        }
-
-        .pagination button:hover:not(:disabled) {
-            background: var(--primary-color);
-            transform: translateY(-2px);
-            box-shadow: 0 3px 10px rgba(255, 107, 157, 0.3);
-        }
-
-        .pagination button.active {
-            background: var(--primary-color);
-            transform: translateY(-2px);
-        }
-
-        .pagination button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .loading-container {
-            text-align: center;
-            padding: 3rem;
-            color: var(--text-secondary);
-        }
-
-        .loading-spinner {
-            display: inline-block;
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255, 107, 157, 0.2);
-            border-top: 4px solid var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 1rem;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        @media (max-width: 768px) {
-            .page-header h1 {
-                font-size: 1.8rem;
-            }
-
-            .filters-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .filter-buttons {
-                flex-direction: column;
-            }
-
-            .results-info {
-                flex-direction: column;
-                gap: 0.5rem;
-                text-align: center;
-            }
-
-            .pagination {
-                gap: 0.3rem;
-            }
-
-            .pagination button {
-                min-width: 40px;
-                padding: 0.5rem 0.7rem;
-                font-size: 0.9rem;
-            }
-        }
-    </style>
 </head>
 <body>
     <!-- Header -->
@@ -229,7 +16,7 @@
             <div class="container">
                 <div class="nav-wrapper">
                     <div class="logo">
-                        <h1><a href="index.html" style="text-decoration: none; color: inherit;"> Doki Doki Anime</a></h1>
+                        <h1><a href="index.html" style="text-decoration: none; color: inherit;">🎌 Doki Doki Anime</a></h1>
                     </div>
                     <ul class="nav-menu">
                         <li><a href="index.html">Home</a></li>
@@ -264,45 +51,13 @@
                             <option value="">Todos los géneros</option>
                             <option value="action">Acción</option>
                             <option value="adventure">Aventura</option>
-                            <option value="cars">Autos</option>
                             <option value="comedy">Comedia</option>
-                            <option value="dementia">Demencia</option>
-                            <option value="demons">Demonios</option>
                             <option value="drama">Drama</option>
-                            <option value="ecchi">Ecchi</option>
                             <option value="fantasy">Fantasía</option>
-                            <option value="game">Juegos</option>
-                            <option value="harem">Harem</option>
-                            <option value="historical">Histórico</option>
                             <option value="horror">Horror</option>
-                            <option value="isekai">Isekai</option>
-                            <option value="josei">Josei</option>
-                            <option value="kids">Niños</option>
-                            <option value="magic">Magia</option>
-                            <option value="martial-arts">Artes Marciales</option>
-                            <option value="mecha">Mecha</option>
-                            <option value="military">Militar</option>
-                            <option value="music">Música</option>
-                            <option value="mystery">Misterio</option>
-                            <option value="parody">Parodia</option>
-                            <option value="police">Policía</option>
-                            <option value="psychological">Psicológico</option>
                             <option value="romance">Romance</option>
-                            <option value="samurai">Samurai</option>
-                            <option value="school">Escolar</option>
                             <option value="sci-fi">Sci-Fi</option>
-                            <option value="seinen">Seinen</option>
-                            <option value="shoujo">Shoujo</option>
-                            <option value="shoujo-ai">Shoujo-Ai</option>
-                            <option value="shounen">Shounen</option>
-                            <option value="shounen-ai">Shounen-Ai</option>
                             <option value="slice-of-life">Slice of Life</option>
-                            <option value="space">Espacial</option>
-                            <option value="sports">Deportes</option>
-                            <option value="super-power">Super Poderes</option>
-                            <option value="supernatural">Sobrenatural</option>
-                            <option value="thriller">Thriller</option>
-                            <option value="vampire">Vampiros</option>
                         </select>
                     </div>
 
@@ -319,15 +74,6 @@
                     </div>
 
                     <div class="filter-group">
-                        <label for="statusFilter">📊 Estado</label>
-                        <select id="statusFilter">
-                            <option value="">Todos los estados</option>
-                            <option value="completed">Completado</option>
-                            <option value="top-airing">En Emisión</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-group">
                         <label for="sortFilter">🔝 Ordenar por</label>
                         <select id="sortFilter">
                             <option value="most-popular">Más Popular</option>
@@ -340,17 +86,15 @@
                 </div>
 
                 <div class="filter-buttons">
-                   <button class="apply-filter" id="applyFiltersBtn">
-                   <button class="clear-filter" id="clearFiltersBtn">
+                    <button class="apply-filter" id="applyFiltersBtn">🔍 Aplicar Filtros</button>
+                    <button class="clear-filter" id="clearFiltersBtn">✕ Limpiar Filtros</button>
+                </div>
+            </div>
 
             <!-- Results Info -->
             <div class="results-info">
-                <div id="resultsCount">
-                    <strong>📊 Cargando resultados...</strong>
-                </div>
-                <div id="currentPage">
-                    <strong>📄 Página 1</strong>
-                </div>
+                <div id="resultsCount"><strong>📊 Cargando...</strong></div>
+                <div id="currentPage"><strong>📄 Página 1</strong></div>
             </div>
 
             <!-- Anime Grid -->
@@ -402,7 +146,10 @@
             </div>
         </div>
     </footer>
-    <script type="module" src="api-config.js"></script>
-    <script type="module" src="browse.js"></script>
+
+    <!-- SCRIPTS ESTÁTICOS (sin type="module") -->
+    <script src="api-config.js"></script>
+    <script src="api-adapter.js"></script>
+    <script src="browse.js"></script>
 </body>
 </html>
