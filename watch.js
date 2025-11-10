@@ -50,25 +50,43 @@ async function loadAnimeInfo(animeId) {
 }
 
 // Cargar episodios
-async function loadEpisodes(animeId) {
-    try {
-        showLoading(true);
-        // IMPORTANTE: El endpoint es /api/episodes/{id} sin parámetros extra
-        const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.EPISODES}/${encodeURIComponent(animeId)}`);
-        const data = await res.json();
-        
-        if (!data?.success || !Array.isArray(data.results?.episodes)) {
-            console.warn('No hay episodios disponibles o formato incorrecto');
-            return [];
+async function loadEpisode(episode) {
+    // GUARDAR EL ID CORRECTO
+    currentEpisodeDataId = episode.data_id || episode.id; // Fallback si data_id no existe
+    
+    console.log('Cargando episodio:', episode);
+    console.log('data_id:', currentEpisodeDataId);
+
+    document.getElementById('episode-title').textContent = 
+        `Episodio ${episode.episode_no}${episode.title ? `: ${episode.title}` : ''}`;
+
+    // Actualizar UI de episodios
+    renderEpisodeList(episodeList, currentEpisodeDataId);
+
+    // Cargar servidores con el ID correcto
+    showLoading(true);
+    const servers = await loadServers(currentAnimeId, currentEpisodeDataId);
+    renderServers(servers, currentAnimeId, currentEpisodeDataId);
+    
+    // Auto-cargar primer servidor
+    if (servers.length > 0) {
+        const first = servers[0];
+        const url = await getStreamUrl(currentAnimeId, first.server_id, currentEpisodeDataId, first.type || 'sub');
+        if (url) {
+            document.getElementById('video-player').innerHTML = `
+                <video class="video-player" controls autoplay playsinline>
+                    <source src="${url}" type="video/mp4">
+                    Tu navegador no soporta el video.
+                </video>
+            `;
         }
-        return data.results.episodes;
-    } catch (err) {
-        console.error('Error al cargar episodios:', err);
-        showError('No se pudieron cargar los episodios.');
-        return [];
-    } finally {
-        showLoading(false);
     }
+    showLoading(false);
+
+    // Actualizar URL
+    const newUrl = new URL(window.location);
+    newUrl.searchParams.set('ep', episode.episode_no);
+    window.history.replaceState(null, '', newUrl);
 }
 
 // Cargar servidores
