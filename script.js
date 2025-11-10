@@ -1,9 +1,5 @@
 // script.js - Funcionalidad principal con configuración centralizada
-
-// Importar configuración (si usas módulos)
 import { API_CONFIG } from './api-config.js';
-
-
 
 // Inicializar la aplicación
 document.addEventListener('DOMContentLoaded', () => {
@@ -13,31 +9,28 @@ document.addEventListener('DOMContentLoaded', () => {
     loadHomeContent();
 });
 
-// ===== BUSCADOR MEJORADO =====
+// ===== BUSCADOR =====
 
 function initSearchBar() {
     const searchInput = document.getElementById('searchInput');
     const searchButton = document.querySelector('.search-btn');
 
     if (searchButton && searchInput) {
-        // Búsqueda al hacer clic
         searchButton.addEventListener('click', () => {
             performSearch(searchInput.value.trim());
         });
 
-        // Búsqueda al presionar Enter
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 performSearch(searchInput.value.trim());
             }
         });
 
-        // Sugerencias en tiempo real
+        // Sugerencias
         let searchTimeout;
         searchInput.addEventListener('input', (e) => {
             clearTimeout(searchTimeout);
             const query = e.target.value.trim();
-            
             if (query.length >= 2) {
                 searchTimeout = setTimeout(() => {
                     showSearchSuggestions(query);
@@ -47,66 +40,37 @@ function initSearchBar() {
     }
 }
 
-// Realizar búsqueda
 async function performSearch(query) {
     if (!query || query.length < 2) {
         alert('Por favor, ingresa al menos 2 caracteres para buscar');
         return;
     }
-
-    try {
-        showLoading('🔍 Buscando anime...');
-        
-        const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SEARCH}?keyword=${encodeURIComponent(query)}`);
-        
-        if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
-        }
-
-        const data = await response.json();
-        
-        if (!data.success || !data.results) {
-            throw new Error('No se encontraron resultados');
-        }
-
-        hideLoading();
-        displaySearchResults(data.results, query);
-        
-    } catch (error) {
-        console.error('Error en búsqueda:', error);
-        hideLoading();
-        showError('Error al buscar anime. Por favor, intenta de nuevo.');
-    }
+    
+    // Redirigir a browse con el parámetro de búsqueda
+    window.location.href = `browse.html?search=${encodeURIComponent(query)}`;
 }
 
-// Mostrar sugerencias de búsqueda
 async function showSearchSuggestions(query) {
     try {
-        const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SEARCH_SUGGEST}?keyword=${encodeURIComponent(query)}`);
+        const response = await fetch(
+            `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SEARCH_SUGGEST}?keyword=${encodeURIComponent(query)}`
+        );
         
         if (!response.ok) return;
 
         const data = await response.json();
         
-        if (!data.success || !data.results || data.results.length === 0) {
-            return;
-        }
+        if (!data.success || !data.results?.length) return;
 
-        // Aquí puedes implementar un dropdown de sugerencias
         console.log('Sugerencias:', data.results.slice(0, 5));
+        // Aquí puedes implementar un dropdown visual
         
     } catch (error) {
         console.error('Error en sugerencias:', error);
     }
 }
 
-// Mostrar resultados de búsqueda
-function displaySearchResults(results, query) {
-    // Redirigir a browse.html con parámetros de búsqueda
-    window.location.href = `browse.html?search=${encodeURIComponent(query)}`;
-}
-
-// ===== CONTENIDO DEL HOME OPTIMIZADO =====
+// ===== CONTENIDO DEL HOME =====
 
 async function loadHomeContent() {
     try {
@@ -115,7 +79,7 @@ async function loadHomeContent() {
         const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.HOME}`);
         
         if (!response.ok) {
-            throw new Error('Error al cargar contenido del home');
+            throw new Error(`Error HTTP: ${response.status}`);
         }
 
         const data = await response.json();
@@ -126,22 +90,11 @@ async function loadHomeContent() {
 
         const results = data.results;
         
-        // Cargar secciones si existen
-        if (results.trending) {
-            loadSection('topSearches', results.trending, '🔥 Top Búsquedas');
-        }
-        
-        if (results.mostPopular) {
-            loadSection('popularAnime', results.mostPopular, '⭐ Más Populares');
-        }
-        
-        if (results.topAiring) {
-            loadSection('airingAnime', results.topAiring, '📺 En Emisión');
-        }
-        
-        if (results.latestEpisode) {
-            loadSection('moviesAnime', results.latestEpisode, '🎬 Últimos Episodios');
-        }
+        // Cargar cada sección
+        loadSection('topSearches', results.trending || [], '🔥 Top Búsquedas');
+        loadSection('popularAnime', results.mostPopular || [], '⭐ Más Populares');
+        loadSection('airingAnime', results.topAiring || [], '📺 En Emisión');
+        loadSection('moviesAnime', results.latestEpisode || [], '🎬 Últimos Episodios');
 
         hideLoading();
         
@@ -152,7 +105,6 @@ async function loadHomeContent() {
     }
 }
 
-// Cargar sección de contenido
 function loadSection(sectionId, animes, title) {
     const section = document.getElementById(sectionId);
     if (!section) {
@@ -165,28 +117,36 @@ function loadSection(sectionId, animes, title) {
         return;
     }
 
-    section.innerHTML = animes.slice(0, 12).map(anime => `
-        <div class="anime-card" onclick="goToAnime('${anime.id}', '${anime.title.replace(/'/g, "\\'")}')">
-            <img src="${anime.poster || 'https://via.placeholder.com/200x280/ff6b9d/ffffff?text=No+Image'}" 
-                 alt="${anime.title}" 
-                 loading="lazy"
-                 onerror="this.src='https://via.placeholder.com/200x280/ff6b9d/ffffff?text=No+Image'">
-            <span class="status-badge">${anime.tvInfo?.showType || 'Anime'}</span>
-            <div class="anime-info">
-                <div class="anime-title" title="${anime.title}">${anime.title}</div>
-                <div class="anime-meta">
-                    <span class="rating">⭐ ${anime.tvInfo?.rating || '8.0'}</span>
-                    <span>${anime.tvInfo?.eps || '?'} EP</span>
+    section.innerHTML = animes.slice(0, 12).map(anime => {
+        const title = anime.title || anime.name || 'Sin título';
+        const poster = anime.poster || 'https://via.placeholder.com/200x280/ff6b9d/ffffff?text=No+Image';
+        const rating = anime.tvInfo?.['MAL Score'] || anime.tvInfo?.rating || '8.0';
+        const type = anime.tvInfo?.showType || 'TV';
+        const episodes = anime.tvInfo?.eps || anime.tvInfo?.sub || '?';
+
+        return `
+            <div class="anime-card" onclick="goToAnime('${anime.id}', '${title.replace(/'/g, "\\'")}')">
+                <img src="${poster}" 
+                     alt="${title}" 
+                     loading="lazy"
+                     onerror="this.src='https://via.placeholder.com/200x280/ff6b9d/ffffff?text=No+Image'">
+                <span class="status-badge">${type}</span>
+                <div class="anime-info">
+                    <div class="anime-title" title="${title}">${title}</div>
+                    <div class="anime-meta">
+                        <span class="rating">⭐ ${rating}</span>
+                        <span>${episodes} EP</span>
+                    </div>
                 </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // ===== NAVEGACIÓN =====
 
 function goToAnime(animeId, animeTitle) {
-    window.location.href = `watch.html?id=${animeId}&name=${encodeURIComponent(animeTitle)}`;
+    window.location.href = `watch.html?id=${encodeURIComponent(animeId)}`;
 }
 
 // ===== MENÚ MÓVIL =====
@@ -214,7 +174,6 @@ function initMobileMenu() {
             }
         });
 
-        // Cerrar menú al hacer clic en un enlace
         navMenu.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', () => {
                 navMenu.style.display = 'none';
@@ -223,7 +182,7 @@ function initMobileMenu() {
     }
 }
 
-// ===== UTILIDADES MEJORADAS =====
+// ===== UTILIDADES =====
 
 function showLoading(message = 'Cargando...') {
     let loading = document.getElementById('loading-overlay');
@@ -265,7 +224,21 @@ function hideLoading() {
 }
 
 function showError(message) {
-    // Puedes implementar un sistema de notificaciones más elegante
     console.error('Error:', message);
-    alert(message); // Temporal - mejorar con UI propia
+    // Crear un toast notification en lugar de alert
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background: #ff4444;
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
 }
