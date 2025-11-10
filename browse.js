@@ -1,4 +1,31 @@
 // browse.js - FUNCIÓN loadAnime CORREGIDA
+// browse.js - FUNCIÓN fetchFromAPI CORREGIDA
+async function fetchFromAPI(endpoint) {
+    try {
+        const url = `${window.API_CONFIG.BASE_URL}${endpoint}`;
+        console.log('🔗 Fetching:', url);
+        
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        // VALIDACIÓN DE ESTRUCTURA
+        if (!data) {
+            throw new Error('Respuesta vacía de la API');
+        }
+        
+        console.log('✅ Respuesta API:', data);
+        
+        return data;
+    } catch (error) {
+        console.error(`❌ Error fetching ${endpoint}:`, error);
+        return null;
+    }
+}
+
 async function loadAnime(page = 1) {
     const grid = document.getElementById('animeGrid');
     const resultsCount = document.getElementById('resultsCount');
