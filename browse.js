@@ -1,4 +1,4 @@
-
+import { API_CONFIG } from './api-config.js';
 
 // Función para hacer peticiones a la API
 async function fetchFromAPI(endpoint) {
